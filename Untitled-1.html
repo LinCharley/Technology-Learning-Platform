@@ -1,0 +1,757 @@
+import os
+
+# Define the HTML content for the Living Technology Quiz Game
+html_content = """<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🕹️ 生活科技小學堂 - 知識闖關遊戲</title>
+    <style>
+        /* CSS Reset & Variable Definitions */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #0ea5e9;
+            --primary-hover: #38bdf8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --wood-accent: #b45309;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: block;
+            padding: 20px 12px;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background-color: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            border: 2px solid #334155;
+            overflow: hidden;
+            padding: 24px;
+            position: relative;
+        }
+
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+
+        /* Header Style */
+        .game-header {
+            margin-bottom: 24px;
+            border-bottom: 2px dashed #334155;
+            padding-bottom: 16px;
+        }
+
+        .game-title {
+            font-size: 22pt;
+            font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(14, 165, 233, 0.3);
+            margin-bottom: 8px;
+        }
+
+        .game-subtitle {
+            font-size: 11pt;
+            color: var(--text-muted);
+        }
+
+        /* Screen 1: Welcome / Category Selection */
+        .welcome-screen p {
+            font-size: 11pt;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+        }
+
+        .category-list {
+            display: block;
+        }
+
+        .btn-category {
+            display: block;
+            width: 100%;
+            background: #1e293b;
+            border: 2px solid #475569;
+            border-left: 6px solid var(--primary);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
+            color: var(--text-main);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-category:hover {
+            transform: scale(1.02);
+            background: #273549;
+            border-color: var(--primary);
+        }
+
+        .btn-category.cat-manufacturing { border-left-color: var(--wood-accent); }
+        .btn-category.cat-mechatronics { border-left-color: var(--primary); }
+        .btn-category.cat-design { border-left-color: var(--accent-amber); }
+
+        .cat-title {
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .cat-desc {
+            font-size: 10pt;
+            color: var(--text-muted);
+        }
+
+        /* Stats Bar (Hearts, Timer, Progress) */
+        .status-bar {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+            background: #0f172a;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .status-cell {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 11pt;
+            font-weight: bold;
+        }
+
+        .status-left { text-align: left; width: 35%; }
+        .status-center { text-align: center; width: 30%; color: var(--accent-amber); }
+        .status-right { text-align: right; width: 35%; }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background-color: #334155;
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Question Box */
+        .question-box {
+            font-size: 13pt;
+            font-weight: 700;
+            line-height: 1.5;
+            margin-bottom: 24px;
+            color: var(--text-main);
+        }
+
+        /* Options */
+        .options-list {
+            margin-bottom: 20px;
+        }
+
+        .btn-option {
+            display: block;
+            width: 100%;
+            background: #334155;
+            border: 2px solid #475569;
+            color: var(--text-main);
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 11pt;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-option:hover:not([disabled]) {
+            background: #475569;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-option:active:not([disabled]) {
+            transform: translateY(0);
+        }
+
+        /* Answer Feedback States */
+        .btn-option.correct {
+            background-color: rgba(16, 185, 129, 0.2) !important;
+            border-color: var(--accent-green) !important;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .btn-option.wrong {
+            background-color: rgba(239, 68, 68, 0.2) !important;
+            border-color: var(--accent-red) !important;
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        /* Feedback Area */
+        .feedback-area {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .feedback-area.correct-style { border-left-color: var(--accent-green); }
+        .feedback-area.wrong-style { border-left-color: var(--accent-red); }
+
+        .feedback-status {
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .explanation-text {
+            font-size: 10.5pt;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            display: inline-block;
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 12pt;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: center;
+        }
+
+        .btn-action:hover {
+            background: var(--primary-hover);
+        }
+
+        /* End Screen / Scoreboard */
+        .result-icon {
+            font-size: 48pt;
+            margin-bottom: 16px;
+        }
+
+        .score-text {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .title-badge {
+            display: inline-block;
+            background: var(--accent-amber);
+            color: #0f172a;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 12pt;
+            margin-bottom: 20px;
+        }
+
+        .history-box {
+            background: #0f172a;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            font-size: 10.5pt;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Math Styling */
+        .math {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="game-header text-center">
+            <div class="game-title">🕹️ 生活科技小學堂</div>
+            <div class="game-subtitle">知識大闖關 • 自我挑戰與複習利器</div>
+        </div>
+
+        <div id="screen-welcome" class="welcome-screen">
+            <p>歡迎來到生活科技小學堂！本遊戲精選核心生活科技考點，包含製造工安、機電整合與工程設計思維。請選擇一個主題關卡開始挑戰，每關隨機抽出 5 題，看看你能拿到什麼稱號吧！</p>
+            
+            <div class="category-list">
+                <button class="btn-category cat-manufacturing" onclick="startGame('manufacturing')">
+                    <div class="cat-title">🪵 製造科技與工安</div>
+                    <div class="cat-desc">手動工具、木工金工機械操作規範、安全防護口訣</div>
+                </button>
+                
+                <button class="btn-category cat-mechatronics" onclick="startGame('mechatronics')">
+                    <div class="cat-title">⚡ 資訊與機電整合</div>
+                    <div class="cat-desc">Arduino/ESP32硬體控制、邏輯演算法、基礎電路與密碼技術</div>
+                </button>
+                
+                <button class="btn-category cat-design" onclick="startGame('design')">
+                    <div class="cat-title">📐 設計與工程思考</div>
+                    <div class="cat-desc">正投影製圖、機構連桿運作、3D列印與材料基礎知識</div>
+                </button>
+            </div>
+
+            <div class="history-box" id="global-history" style="margin-top: 20px;">
+                </div>
+        </div>
+
+        <div id="screen-game" class="hidden">
+            <div class="status-bar">
+                <div class="status-cell status-left" id="heart-container">❤️ ❤️ ❤️</div>
+                <div class="status-cell status-center" id="timer-display">⏱️ 倒數 30s</div>
+                <div class="status-cell status-right" id="progress-text">題組 1 / 5</div>
+            </div>
+
+            <div class="progress-container">
+                <div id="progress-bar-inner" class="progress-bar"></div>
+            </div>
+
+            <div id="question-text" class="question-box">題目載入中...</div>
+
+            <div id="options-container" class="options-list">
+                </div>
+
+            <div id="feedback-box" class="feedback-area hidden">
+                <div id="feedback-title" class="feedback-status"></div>
+                <div id="explanation-content" class="explanation-text"></div>
+            </div>
+
+            <button id="btn-next" class="btn-action hidden" onclick="nextQuestion()">下一題 ➔</button>
+        </div>
+
+        <div id="screen-result" class="hidden text-center">
+            <div id="result-emoji" class="result-icon">🏆</div>
+            <div id="result-status-text" style="font-size: 18pt; font-weight: bold; margin-bottom: 10px;">挑戰完成！</div>
+            <div id="result-score" class="score-text">答對 0 題 / 共 5 題</div>
+            <div id="result-badge" class="title-badge">生科小達人</div>
+            
+            <div class="history-box" id="category-record-box">
+                </div>
+
+            <button class="btn-action" onclick="returnToMenu()">返回主選單 ↩</button>
+        </div>
+    </div>
+
+    <script>
+        // --- COMPLETE BANK OF LIVING TECHNOLOGY QUESTIONS ---
+        const gameData = [
+            // Manufacturing & Safety
+            {
+                category: "manufacturing",
+                question: "在操作以下哪一種生活科技教室的機械工具時，『絕對不可』配戴手套以免被捲入？",
+                options: ["A. 使用手持線鋸機鋸切薄木板", "B. 操作桌上型鑽孔機或帶鋸機", "C. 使用砂紙手動打磨木材邊緣", "D. 操作熱膠槍黏合模型結構"],
+                answer: "B",
+                explanation: "💡 答案是 B！操作旋轉式固定工作母機（如鑽孔機、帶鋸機、車床）時配戴手套，極易因手套纖維被高速旋轉部件咬住而將整隻手捲入，造成嚴重傷害！手動操作或拿取粗糙材料時才需防刺手套。"
+            },
+            {
+                category: "manufacturing",
+                question: "木工加工中常說的『順紋理鋸切』與『橫紋理鋸切』，在使用鋸齒設計時有何不同？",
+                options: ["A. 橫切時木纖維堅韌，需使用齒尖尖銳且具交叉縱向剪切功能的『橫斷齒』", "B. 順切時阻力較大，必須使用鋸齒極小的微型鋸片", "C. 兩種切法在力學結構上完全相同，使用同一種齒型即可", "D. 橫切時應使用縱切鋸，如此排屑效果才能達到最佳狀態"],
+                answer: "A",
+                explanation: "💡 答案是 A！木材具方向性。順著木理切如同劈柴，用『縱斷齒』如鏟子般刨除木屑；橫斷切則是在割斷高韌性纖維，需用如同雙排小刀交錯的『橫斷齒』來切斷木理。"
+            },
+            {
+                category: "manufacturing",
+                question: "使用手動手持「線鋸機（Scroll Saw）」進行曲線鋸切時，下列哪項操作原則是正確的？",
+                options: ["A. 為了趕進度，應全速將木板往前猛推", "B. 雙手應放在鋸絲正前方，以便精準對齊線條", "C. 應保持轉速適當，以平穩且均勻的力道將木板順著曲線推送進給", "D. 鋸切到一半如果卡住，應在發動狀態下直接往後用力硬拔"],
+                answer: "C",
+                explanation: "💡 答案是 C！曲線鋸切必須徐徐進給，若前推太猛會導致鋸絲受熱過高甚至斷裂。雙手嚴禁置於鋸絲前進路線上，若卡住應關閉電源後再做處理。"
+            },
+
+            // Mechatronics & CS Logic
+            {
+                category: "mechatronics",
+                question: "若想要製作一個智慧型溫室系統，利用 ESP32 控制板來精準偵測「泥土中的含水量」，應優先選用何種感測器？",
+                options: ["A. 超音波感測器 (HC-SR04)", "B. 土壤濕度感測器 (Soil Moisture Sensor)", "C. 光敏電阻感測模組 (LDR)", "D. 紅外線遙控接收器 (IR Receiver)"],
+                answer: "B",
+                explanation: "💡 答案是 B！土壤濕度感測器是利用兩電極間的電阻值值變化（或電容式變化）來換算出含水量。超音波用於測量距離，光敏電阻用於測量光照強度。"
+            },
+            {
+                category: "mechatronics",
+                question: "在資安與演算法單元中，哪一種技術具有『不可逆性』，最適合用來將使用者的密碼進行編碼並儲存於資料庫中？",
+                options: ["A. RSA 非對稱加密演算法", "B. DES 對稱流加密演算法", "C. SHA-256 密碼雜湊演算法", "D. AES 高級對稱加密標準"],
+                answer: "C",
+                explanation: "💡 答案是 C！雜湊（Hash）演算法如 <span class='math'>SHA-256</span> 具有單向不可逆性（無法由輸出結果反推回明文密碼）。而 <span class='math'>RSA</span>、<span class='math'>DES</span>、<span class='math'>AES</span> 均屬於可加密亦可藉由金鑰解密的雙向加密技術。"
+            },
+            {
+                category: "mechatronics",
+                question: "在微控制器應用中，想要利用數位腳位 (Digital Pin) 讓一顆 LED 燈呈現逐漸變亮、逐漸變暗的「呼吸燈」效果，最常用什麼原理？",
+                options: ["A. 脈衝寬度調變 (PWM, Pulse Width Modulation)", "B. 類比數位轉換 (ADC)", "C. 繼電器開關跳接演算法", "D. 提高輸入的直流固定電壓"],
+                answer: "A",
+                explanation: "💡 答案是 A！數位腳位只能輸出 0V 或 5V。藉由快速切換開與關的高低電平訊號佔空比（Duty Cycle），可以在宏觀上欺騙人眼，達到模擬輸出連續電壓的類比效果，稱為 PWM。"
+            },
+
+            // Design & Engineering Thinking
+            {
+                category: "design",
+                question: "依照我國國家標準 (CNS) 的工程製圖規範，所謂的「第三角法」正投影圖，其視圖的相對擺放位置組合應該是如何？",
+                options: ["A. 前視圖在下方，俯視圖在前視圖的正上方，右側視圖在前視圖的正右方", "B. 前視圖在上方，俯視圖在前視圖的正下方，右側視圖在正左方", "C. 俯視圖在最左方，前視圖在最右方", "D. 擺放位置不限，只要有標註尺寸即可"],
+                answer: "A",
+                explanation: "💡 答案是 A！台灣與美國常用的第三角法原則為「眼睛→投影面→物體」，因此上方的俯視圖就在前視圖上方，右側看到的右側視圖就擺在右方，符合直覺。第一角法則剛好相反。"
+            },
+            {
+                category: "design",
+                question: "在四連桿機構（Four-bar Linkage）中，若想要達成其中一個連桿能做「360度完整連續旋轉」（成為曲柄），根據葛氏定理（Grashof's Law），其桿長必須符合什麼條件？",
+                options: ["A. 最長桿與最短桿的長度之和，必須大於其餘兩桿長度之和", "B. 最長桿與最短桿的長度之和，必須小於或等於其餘兩桿長度之和", "C. 四根連桿的長度必須完全相等", "D. 固定桿必須是整組機構中最長的那一根桿子"],
+                answer: "B",
+                explanation: "💡 答案是 B！葛氏定理指出，若要使機構中至少有一桿能展現完全迴轉，其最短桿長與最長桿長之和，不得大於其餘兩桿之長度和（<span class='math'>S + L ≤ P + Q</span>）。"
+            }
+        ];
+
+        // --- GAME STATE VARIABLES ---
+        let currentQuestions = [];
+        let currentQuestionIdx = 0;
+        let score = 0;
+        let lives = 3;
+        let timerInterval = null;
+        let timeLeft = 30;
+        let activeCategory = "";
+        let audioCtx = null;
+
+        // --- AUDIO ENGINE (Web Audio API - Fully Offline & No Assets Required) ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'correct') {
+                    // Two upbeat notes
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    // Harsh dropping note
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(90, now + 0.4);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'gameover') {
+                    // Sad descending sequence
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.setValueAtTime(220, now + 0.15);
+                    osc.frequency.setValueAtTime(150, now + 0.3);
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc.start(now);
+                    osc.stop(now + 0.6);
+                } else if (type === 'victory') {
+                    // Arpeggio fanfare
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc.start(now);
+                    osc.stop(now + 0.6);
+                }
+            } catch (e) {
+                console.log("Audio presentation blocked or unsupported:", e);
+            }
+        }
+
+        // --- LOCAL STORAGE HANDLING ---
+        function updateGlobalLeaderboard() {
+            const container = document.getElementById('global-history');
+            const history = JSON.parse(localStorage.getItem('lt_shang_records')) || {};
+            
+            let html = `<strong style="color:var(--primary);">💾 本機個人歷史最佳紀錄：</strong><br>`;
+            if (Object.keys(history).length === 0) {
+                html += "目前尚無挑戰紀錄，趕緊挑選關卡開啟第一戰吧！";
+            } else {
+                if (history['manufacturing'] !== undefined) html += `• 製造科技與工安：答對 ${history['manufacturing']} 題<br>`;
+                if (history['mechatronics'] !== undefined) html += `• 資訊與機電整合：答對 ${history['mechatronics']} 題<br>`;
+                if (history['design'] !== undefined) html += `• 設計與工程思考：答對 ${history['design']} 題<br>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function saveRecord(category, score) {
+            const history = JSON.parse(localStorage.getItem('lt_shang_records')) || {};
+            if (history[category] === undefined || history[category] < score) {
+                history[category] = score;
+                localStorage.setItem('lt_shang_records', JSON.stringify(history));
+            }
+        }
+
+        // --- GAME LOGIC FLOW ---
+        function startGame(category) {
+            initAudio();
+            activeCategory = category;
+            
+            // Filter questions based on category selection
+            const pool = gameData.filter(q => q.category === category);
+            
+            // Shuffle and pick max 5 questions
+            currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, 5);
+            
+            currentQuestionIdx = 0;
+            score = 0;
+            lives = 3;
+            
+            // UI setup
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            // Check game-over states
+            if (lives <= 0) {
+                endGame(false);
+                return;
+            }
+
+            if (currentQuestionIdx >= currentQuestions.length) {
+                endGame(true);
+                return;
+            }
+
+            // Reset UI components for the current question
+            clearInterval(timerInterval);
+            timeLeft = 30;
+            document.getElementById('timer-display').innerText = `⏱️ 倒數 ${timeLeft}s`;
+            document.getElementById('feedback-box').classList.add('hidden');
+            document.getElementById('btn-next').classList.add('hidden');
+
+            // Render stats indicators
+            let heartStr = "";
+            for(let i=0; i<3; i++) {
+                heartStr += (i < lives) ? "❤️ " : "🖤 ";
+            }
+            document.getElementById('heart-container').innerText = heartStr;
+            document.getElementById('progress-text').innerText = `題組 ${currentQuestionIdx + 1} / ${currentQuestions.length}`;
+            
+            // Update horizontal progress bar width
+            const pct = (currentQuestionIdx / currentQuestions.length) * 100;
+            document.getElementById('progress-bar-inner').style.width = `${pct}%`;
+
+            // Display current question details
+            const q = currentQuestions[currentQuestionIdx];
+            document.getElementById('question-text').innerHTML = q.question;
+
+            // Generate option elements dynamically
+            const optContainer = document.getElementById('options-container');
+            optContainer.innerHTML = "";
+            
+            q.options.forEach(opt => {
+                const prefix = opt.charAt(0); // Expected format: 'A', 'B', 'C', 'D'
+                const btn = document.createElement('button');
+                btn.className = 'btn-option';
+                btn.innerHTML = opt;
+                btn.onclick = () => handleAnswerSubmit(prefix, btn);
+                optContainer.appendChild(btn);
+            });
+
+            // Launch countdown countdown timer
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-display').innerText = `⏱️ 倒數 ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function handleAnswerSubmit(chosenPrefix, selectedButton) {
+            clearInterval(timerInterval);
+            const q = currentQuestions[currentQuestionIdx];
+            
+            // Freeze option interactions
+            const allButtons = document.querySelectorAll('.btn-option');
+            allButtons.forEach(b => b.disabled = true);
+
+            const feedbackBox = document.getElementById('feedback-box');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const expContent = document.getElementById('explanation-content');
+
+            if (chosenPrefix === q.answer) {
+                // Correct answer block
+                score++;
+                selectedButton.classList.add('correct');
+                feedbackTitle.innerText = "⭕ 答對了！太厲害了！";
+                feedbackBox.className = "feedback-area correct-style";
+                playSound('correct');
+            } else {
+                // Incorrect answer block
+                lives--;
+                selectedButton.classList.add('wrong');
+                feedbackTitle.innerText = "❌ 殘念！答錯囉！";
+                feedbackBox.className = "feedback-area wrong-style";
+                playSound('wrong');
+                
+                // Highlight the correct option dynamically for pedagogy
+                allButtons.forEach(b => {
+                    if(b.innerText.startsWith(q.answer)) {
+                        b.classList.add('correct');
+                    }
+                });
+            }
+
+            expContent.innerHTML = q.explanation;
+            feedbackBox.classList.remove('hidden');
+            document.getElementById('btn-next').classList.remove('hidden');
+        }
+
+        function handleTimeout() {
+            lives--;
+            const q = currentQuestions[currentQuestionIdx];
+            const allButtons = document.querySelectorAll('.btn-option');
+            allButtons.forEach(b => {
+                b.disabled = true;
+                if(b.innerText.startsWith(q.answer)) {
+                    b.classList.add('correct');
+                }
+            });
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.className = "feedback-area wrong-style";
+            document.getElementById('feedback-title').innerText = "⏱️ 時間到！扣除一顆心！";
+            document.getElementById('explanation-content').innerHTML = q.explanation;
+            feedbackBox.classList.remove('hidden');
+            document.getElementById('btn-next').classList.remove('hidden');
+            playSound('wrong');
+        }
+
+        function nextQuestion() {
+            currentQuestionIdx++;
+            renderQuestion();
+        }
+
+        function endGame(isCompleted) {
+            clearInterval(timerInterval);
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            const scoreDisplay = document.getElementById('result-score');
+            const badgeDisplay = document.getElementById('result-badge');
+            const emojiDisplay = document.getElementById('result-emoji');
+            const statusText = document.getElementById('result-status-text');
+
+            scoreDisplay.innerText = `最終得分：答對 ${score} 題 / 共 ${currentQuestions.length} 題`;
+            
+            // Save to LocalStorage immediately
+            saveRecord(activeCategory, score);
+
+            // Assign ranks, badges, and plays corresponding game outcome audios
+            if (lives <= 0) {
+                emojiDisplay.innerText = "⚙️";
+                statusText.innerText = "生命值歸零，再接再厲！";
+                badgeDisplay.innerText = "生科實習生";
+                badgeDisplay.style.background = "var(--text-muted)";
+                playSound('gameover');
+            } else {
+                statusText.innerText = "恭喜過關，挑戰成功！";
+                if (score === currentQuestions.length) {
+                    emojiDisplay.innerText = "👑";
+                    badgeDisplay.innerText = "頂尖工程師 (滿分)";
+                    badgeDisplay.style.background = "var(--accent-green)";
+                } else if (score >= 3) {
+                    emojiDisplay.innerText = "🏆";
+                    badgeDisplay.innerText = "生科小達人";
+                    badgeDisplay.style.background = "var(--accent-amber)";
+                } else {
+                    emojiDisplay.innerText = "🛠️";
+                    badgeDisplay.innerText = "基層技術員";
+                    badgeDisplay.style.background = "var(--primary)";
+                }
+                playSound('victory');
+            }
+
+            // Display historical records for the active category
+            const history = JSON.parse(localStorage.getItem('lt_shang_records')) || {};
+            document.getElementById('category-record-box').innerHTML = 
+                `本關卡歷史最高得分紀錄：<strong>${history[activeCategory] || score}</strong> 題`;
+        }
+
+        function returnToMenu() {
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-welcome').classList.remove('hidden');
+            updateGlobalLeaderboard();
+        }
+
+        // Initial setup on document load
+        window.onload = function() {
+            updateGlobalLeaderboard();
+        };
+    </script>
+</body>
+</html>
+"""
+
+# Write out the styled game code directly to an HTML file
+output_filename = "living_tech_quiz_game.html"
+with open(output_filename, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print(f"Success! {output_filename} generated.")
