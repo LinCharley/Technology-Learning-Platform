@@ -1,7 +1,4 @@
-import os
-
-# Define the HTML content for the Living Technology Quiz Game
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -311,11 +308,13 @@ html_content = """<!DOCTYPE html>
 <body>
 
     <div class="container">
+        <!-- Game Header -->
         <div class="game-header text-center">
             <div class="game-title">🕹️ 生活科技小學堂</div>
             <div class="game-subtitle">知識大闖關 • 自我挑戰與複習利器</div>
         </div>
 
+        <!-- SCREEN 1: Welcome & Category Selection -->
         <div id="screen-welcome" class="welcome-screen">
             <p>歡迎來到生活科技小學堂！本遊戲精選核心生活科技考點，包含製造工安、機電整合與工程設計思維。請選擇一個主題關卡開始挑戰，每關隨機抽出 5 題，看看你能拿到什麼稱號吧！</p>
             
@@ -337,33 +336,43 @@ html_content = """<!DOCTYPE html>
             </div>
 
             <div class="history-box" id="global-history" style="margin-top: 20px;">
-                </div>
+                <!-- LocalStorage data will load here -->
+            </div>
         </div>
 
+        <!-- SCREEN 2: Quiz Gameplay -->
         <div id="screen-game" class="hidden">
+            <!-- Stats Bar -->
             <div class="status-bar">
                 <div class="status-cell status-left" id="heart-container">❤️ ❤️ ❤️</div>
                 <div class="status-cell status-center" id="timer-display">⏱️ 倒數 30s</div>
                 <div class="status-cell status-right" id="progress-text">題組 1 / 5</div>
             </div>
 
+            <!-- Progress Bar Graphic -->
             <div class="progress-container">
                 <div id="progress-bar-inner" class="progress-bar"></div>
             </div>
 
+            <!-- Question Area -->
             <div id="question-text" class="question-box">題目載入中...</div>
 
+            <!-- Options Area -->
             <div id="options-container" class="options-list">
-                </div>
+                <!-- Option buttons dynamically generated -->
+            </div>
 
+            <!-- Instant Feedback Area (Initially Hidden) -->
             <div id="feedback-box" class="feedback-area hidden">
                 <div id="feedback-title" class="feedback-status"></div>
                 <div id="explanation-content" class="explanation-text"></div>
             </div>
 
+            <!-- Next Question Button (Initially Hidden) -->
             <button id="btn-next" class="btn-action hidden" onclick="nextQuestion()">下一題 ➔</button>
         </div>
 
+        <!-- SCREEN 3: Game Over / Results -->
         <div id="screen-result" class="hidden text-center">
             <div id="result-emoji" class="result-icon">🏆</div>
             <div id="result-status-text" style="font-size: 18pt; font-weight: bold; margin-bottom: 10px;">挑戰完成！</div>
@@ -371,7 +380,8 @@ html_content = """<!DOCTYPE html>
             <div id="result-badge" class="title-badge">生科小達人</div>
             
             <div class="history-box" id="category-record-box">
-                </div>
+                <!-- Historic high score for this specific category -->
+            </div>
 
             <button class="btn-action" onclick="returnToMenu()">返回主選單 ↩</button>
         </div>
@@ -473,7 +483,6 @@ html_content = """<!DOCTYPE html>
                 const now = audioCtx.currentTime;
 
                 if (type === 'correct') {
-                    // Two upbeat notes
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(523.25, now); // C5
                     osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
@@ -482,7 +491,6 @@ html_content = """<!DOCTYPE html>
                     osc.start(now);
                     osc.stop(now + 0.3);
                 } else if (type === 'wrong') {
-                    // Harsh dropping note
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(180, now);
                     osc.frequency.linearRampToValueAtTime(90, now + 0.4);
@@ -491,7 +499,6 @@ html_content = """<!DOCTYPE html>
                     osc.start(now);
                     osc.stop(now + 0.4);
                 } else if (type === 'gameover') {
-                    // Sad descending sequence
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(300, now);
                     osc.frequency.setValueAtTime(220, now + 0.15);
@@ -501,7 +508,6 @@ html_content = """<!DOCTYPE html>
                     osc.start(now);
                     osc.stop(now + 0.6);
                 } else if (type === 'victory') {
-                    // Arpeggio fanfare
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(523.25, now); // C5
                     osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
@@ -546,17 +552,13 @@ html_content = """<!DOCTYPE html>
             initAudio();
             activeCategory = category;
             
-            // Filter questions based on category selection
             const pool = gameData.filter(q => q.category === category);
-            
-            // Shuffle and pick max 5 questions
             currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, 5);
             
             currentQuestionIdx = 0;
             score = 0;
             lives = 3;
             
-            // UI setup
             document.getElementById('screen-welcome').classList.add('hidden');
             document.getElementById('screen-game').classList.remove('hidden');
             document.getElementById('screen-result').classList.add('hidden');
@@ -565,7 +567,6 @@ html_content = """<!DOCTYPE html>
         }
 
         function renderQuestion() {
-            // Check game-over states
             if (lives <= 0) {
                 endGame(false);
                 return;
@@ -576,14 +577,12 @@ html_content = """<!DOCTYPE html>
                 return;
             }
 
-            // Reset UI components for the current question
             clearInterval(timerInterval);
             timeLeft = 30;
             document.getElementById('timer-display').innerText = `⏱️ 倒數 ${timeLeft}s`;
             document.getElementById('feedback-box').classList.add('hidden');
             document.getElementById('btn-next').classList.add('hidden');
 
-            // Render stats indicators
             let heartStr = "";
             for(let i=0; i<3; i++) {
                 heartStr += (i < lives) ? "❤️ " : "🖤 ";
@@ -591,20 +590,17 @@ html_content = """<!DOCTYPE html>
             document.getElementById('heart-container').innerText = heartStr;
             document.getElementById('progress-text').innerText = `題組 ${currentQuestionIdx + 1} / ${currentQuestions.length}`;
             
-            // Update horizontal progress bar width
             const pct = (currentQuestionIdx / currentQuestions.length) * 100;
             document.getElementById('progress-bar-inner').style.width = `${pct}%`;
 
-            // Display current question details
             const q = currentQuestions[currentQuestionIdx];
             document.getElementById('question-text').innerHTML = q.question;
 
-            // Generate option elements dynamically
             const optContainer = document.getElementById('options-container');
             optContainer.innerHTML = "";
             
             q.options.forEach(opt => {
-                const prefix = opt.charAt(0); // Expected format: 'A', 'B', 'C', 'D'
+                const prefix = opt.charAt(0);
                 const btn = document.createElement('button');
                 btn.className = 'btn-option';
                 btn.innerHTML = opt;
@@ -612,7 +608,6 @@ html_content = """<!DOCTYPE html>
                 optContainer.appendChild(btn);
             });
 
-            // Launch countdown countdown timer
             timerInterval = setInterval(() => {
                 timeLeft--;
                 document.getElementById('timer-display').innerText = `⏱️ 倒數 ${timeLeft}s`;
@@ -627,7 +622,6 @@ html_content = """<!DOCTYPE html>
             clearInterval(timerInterval);
             const q = currentQuestions[currentQuestionIdx];
             
-            // Freeze option interactions
             const allButtons = document.querySelectorAll('.btn-option');
             allButtons.forEach(b => b.disabled = true);
 
@@ -636,21 +630,18 @@ html_content = """<!DOCTYPE html>
             const expContent = document.getElementById('explanation-content');
 
             if (chosenPrefix === q.answer) {
-                // Correct answer block
                 score++;
                 selectedButton.classList.add('correct');
                 feedbackTitle.innerText = "⭕ 答對了！太厲害了！";
                 feedbackBox.className = "feedback-area correct-style";
                 playSound('correct');
             } else {
-                // Incorrect answer block
                 lives--;
                 selectedButton.classList.add('wrong');
                 feedbackTitle.innerText = "❌ 殘念！答錯囉！";
                 feedbackBox.className = "feedback-area wrong-style";
                 playSound('wrong');
                 
-                // Highlight the correct option dynamically for pedagogy
                 allButtons.forEach(b => {
                     if(b.innerText.startsWith(q.answer)) {
                         b.classList.add('correct');
@@ -700,10 +691,8 @@ html_content = """<!DOCTYPE html>
 
             scoreDisplay.innerText = `最終得分：答對 ${score} 題 / 共 ${currentQuestions.length} 題`;
             
-            // Save to LocalStorage immediately
             saveRecord(activeCategory, score);
 
-            // Assign ranks, badges, and plays corresponding game outcome audios
             if (lives <= 0) {
                 emojiDisplay.innerText = "⚙️";
                 statusText.innerText = "生命值歸零，再接再厲！";
@@ -728,7 +717,6 @@ html_content = """<!DOCTYPE html>
                 playSound('victory');
             }
 
-            // Display historical records for the active category
             const history = JSON.parse(localStorage.getItem('lt_shang_records')) || {};
             document.getElementById('category-record-box').innerHTML = 
                 `本關卡歷史最高得分紀錄：<strong>${history[activeCategory] || score}</strong> 題`;
@@ -740,18 +728,9 @@ html_content = """<!DOCTYPE html>
             updateGlobalLeaderboard();
         }
 
-        // Initial setup on document load
         window.onload = function() {
             updateGlobalLeaderboard();
         };
     </script>
 </body>
 </html>
-"""
-
-# Write out the styled game code directly to an HTML file
-output_filename = "living_tech_quiz_game.html"
-with open(output_filename, "w", encoding="utf-8") as f:
-    f.write(html_content)
-
-print(f"Success! {output_filename} generated.")
